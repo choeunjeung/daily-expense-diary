@@ -47,6 +47,12 @@ export default function Home() {
     d.setDate(1);
     return d;
   });
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState("");
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -72,12 +78,35 @@ export default function Home() {
 
   const todayList = data[todayKey] || [];
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const value = Number(amount);
     if (!value || value <= 0) return;
 
-    const entry = { amount: value, emotion, memo: memo.trim(), time: new Date().toISOString() };
+    setSaving(true);
+    const trimmedMemo = memo.trim();
+    let category = "기타";
+    try {
+      const res = await fetch("/api/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memo: trimmedMemo }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        category = json.category || "기타";
+      }
+    } catch {
+      // 분류 실패 시 "기타"로 저장
+    }
+
+    const entry = {
+      amount: value,
+      emotion,
+      memo: trimmedMemo,
+      category,
+      time: new Date().toISOString(),
+    };
     setData((prev) => {
       const next = { ...prev };
       next[todayKey] = [...(next[todayKey] || []), entry];
@@ -87,8 +116,66 @@ export default function Home() {
     setAmount("");
     setMemo("");
     setEmotion(EMOTIONS[0]);
+    setSaving(false);
     setPop(true);
     setTimeout(() => setPop(false), 500);
+  }
+
+  async function handleReceiptUpload(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setOcrLoading(true);
+    setOcrError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/ocr-receipt", { method: "POST", body: form });
+      const json = await res.json();
+      if (!res.ok) {
+        setOcrError(json.error || "영수증 인식에 실패했어요.");
+        return;
+      }
+      if (json.amount) setAmount(json.amount);
+      if (json.memo) setMemo(json.memo);
+    } catch {
+      setOcrError("영수증 인식 중 문제가 생겼어요.");
+    } finally {
+      setOcrLoading(false);
+    }
+  }
+
+  async function handleWeeklySummary() {
+    setSummaryLoading(true);
+    setSummaryError("");
+    setSummary("");
+
+    const recentEntries = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = formatKey(d);
+      (data[key] || []).forEach((entry) => recentEntries.push({ date: key, ...entry }));
+    }
+
+    try {
+      const res = await fetch("/api/weekly-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: recentEntries }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSummaryError(json.error || "요약을 만드는 데 실패했어요.");
+        return;
+      }
+      setSummary(json.summary);
+    } catch {
+      setSummaryError("요약 생성 중 문제가 생겼어요.");
+    } finally {
+      setSummaryLoading(false);
+    }
   }
 
   const year = calendarDate.getFullYear();
@@ -144,6 +231,19 @@ export default function Home() {
 
         <section className="rounded-[22px] bg-white/80 p-5 shadow-[0_6px_18px_rgba(255,182,193,0.25)]">
           <h2 className="mb-3 text-base font-semibold">오늘의 지출 남기기 ✏️</h2>
+
+          <label className="mb-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#ffd0dd] bg-[#fff9fb] py-3 text-sm font-semibold text-[#d97a97]">
+            {ocrLoading ? "영수증을 읽는 중... 📸" : "영수증 사진으로 자동 입력하기 📷"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={ocrLoading}
+              onChange={handleReceiptUpload}
+            />
+          </label>
+          {ocrError && <p className="mb-3 text-center text-xs text-red-400">{ocrError}</p>}
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-[#8a6f6f]">금액</label>
@@ -186,9 +286,10 @@ export default function Home() {
             </div>
             <button
               type="submit"
-              className="rounded-2xl bg-gradient-to-r from-[#ffb6c1] to-[#ffd59e] py-3 font-bold text-[#6b3f3f] transition-transform hover:-translate-y-0.5"
+              disabled={saving}
+              className="rounded-2xl bg-gradient-to-r from-[#ffb6c1] to-[#ffd59e] py-3 font-bold text-[#6b3f3f] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
-              기록하기 💖
+              {saving ? "기록하는 중..." : "기록하기 💖"}
             </button>
           </form>
         </section>
@@ -209,9 +310,14 @@ export default function Home() {
                   key={i}
                   className="flex items-center justify-between rounded-2xl bg-[#fff5f7] px-3.5 py-2.5 text-sm"
                 >
-                  <span>
-                    <span className="mr-2 text-lg">{entry.emotion}</span>
-                    {entry.memo || "지출"}
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{entry.emotion}</span>
+                    <span>{entry.memo || "지출"}</span>
+                    {entry.category && (
+                      <span className="rounded-full bg-[#ffe3ec] px-2 py-0.5 text-[0.65rem] font-semibold text-[#d97a97]">
+                        {entry.category}
+                      </span>
+                    )}
                   </span>
                   <span className="font-bold text-[#d97a97]">
                     {Number(entry.amount).toLocaleString()}원
@@ -280,6 +386,23 @@ export default function Home() {
           <p className="mt-3.5 text-center text-xs text-[#a68b8b]">
             ⭐ 무지출 데이 &nbsp;&nbsp; 💸 지출 기록 있음
           </p>
+        </section>
+
+        <section className="rounded-[22px] bg-white/80 p-5 shadow-[0_6px_18px_rgba(255,182,193,0.25)]">
+          <h2 className="mb-3 text-base font-semibold">이번 주 돌아보기 🗓️</h2>
+          <button
+            onClick={handleWeeklySummary}
+            disabled={summaryLoading}
+            className="w-full rounded-2xl bg-gradient-to-r from-[#ffb6c1] to-[#ffd59e] py-3 font-bold text-[#6b3f3f] transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+          >
+            {summaryLoading ? "이번 주를 돌아보는 중..." : "이번 주 요약 보기 💌"}
+          </button>
+          {summaryError && <p className="mt-3 text-center text-xs text-red-400">{summaryError}</p>}
+          {summary && (
+            <p className="mt-3 rounded-2xl bg-[#fff5f7] p-3.5 text-sm leading-relaxed text-[#6b3f3f]">
+              {summary}
+            </p>
+          )}
         </section>
       </div>
     </div>

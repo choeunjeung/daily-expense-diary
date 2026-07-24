@@ -30,6 +30,19 @@
 - 지출 기록이 없는 지난 날(무지출 데이): ⭐ 반짝이는 별 스티커
 - 오늘 날짜는 테두리로 강조
 
+### 4.4 영수증 촬영 자동 입력 (Upstage Information Extraction)
+- 영수증 사진을 업로드하면 Upstage 영수증 추출 API로 금액·상호명을 자동 인식
+- 인식된 값으로 금액/메모 입력칸을 자동으로 채워줌 (사용자가 확인 후 수정 가능)
+- 입력 마찰(타이핑)을 줄여 "귀찮아서 포기" 문제를 직접 해결
+
+### 4.5 메모 기반 자동 카테고리 분류 (Upstage Solar LLM)
+- 메모를 적으면 Solar LLM이 미리 정한 카테고리(식비/카페/교통/쇼핑/문화·여가/생활/기타) 중 하나를 자동으로 붙임
+- 오늘 기록 리스트와 추후 통계에 카테고리 태그로 표시
+
+### 4.6 주간 지출 요약 코멘트 (Upstage Solar LLM)
+- 버튼을 누르면 최근 7일 지출/감정 태그 데이터를 바탕으로 캐릭터가 짧은 회고 코멘트를 생성
+- 숫자 대신 대화체로 소비 패턴을 되짚어보게 함
+
 ## 5. 디자인 방향
 - 파스텔톤(핑크/피치/민트) 그라데이션 배경
 - 둥근 모서리 카드, 부드러운 그림자
@@ -37,7 +50,14 @@
 
 ## 6. 데이터 저장
 - MVP는 브라우저 `localStorage`에 날짜별 지출 배열로 저장 (서버/로그인 없음)
-- 데이터 구조: `{ "YYYY-MM-DD": [{ amount, emotion, memo, time }] }`
+- 데이터 구조: `{ "YYYY-MM-DD": [{ amount, emotion, memo, category, time }] }`
+- `category`는 4.5 자동 분류 기능으로 채워짐 (분류 실패/미사용 시 "기타")
+
+## 6-1. 외부 AI 연동 (Upstage)
+- 영수증 인식: `POST https://api.upstage.ai/v1/information-extraction` (`model=receipt-extraction`, 파일 업로드)
+- 카테고리 분류 / 주간 요약: `POST https://api.upstage.ai/v1/chat/completions` (Solar LLM)
+- API 키는 서버 환경변수(`UPSTAGE_API_KEY`)로만 관리하고, Next.js API Route를 통해서만 호출 (클라이언트에 키 노출 금지)
+- 무료 크레딧 범위 내 사용을 우선하고, 초과 시 기능을 비활성화하고 안내 문구를 보여줌
 
 ## 7. 향후 확장 아이디어 (Out of scope for MVP)
 - 월별 통계/그래프 (감정별 지출 비교 등)
