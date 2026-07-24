@@ -53,11 +53,22 @@
 - 데이터 구조: `{ "YYYY-MM-DD": [{ amount, emotion, memo, category, time }] }`
 - `category`는 4.5 자동 분류 기능으로 채워짐 (분류 실패/미사용 시 "기타")
 
+### 4.7 Notion 백업 동기화
+- localStorage에 지출을 저장하는 즉시(비동기, 실패해도 앱 사용에 영향 없음) Notion 데이터베이스에도 같은 내용을 백업
+- Notion은 "따로 열어서 보는 예쁜 백업/열람용"이며, 앱의 주 저장소는 계속 localStorage
+- Notion DB 컬럼: 메모(제목), 날짜, 금액, 감정, 카테고리, 기록시각
+
 ## 6-1. 외부 AI 연동 (Upstage)
 - 영수증 인식: `POST https://api.upstage.ai/v1/information-extraction` (`model=receipt-extraction`, 파일 업로드)
 - 카테고리 분류 / 주간 요약: `POST https://api.upstage.ai/v1/chat/completions` (Solar LLM)
 - API 키는 서버 환경변수(`UPSTAGE_API_KEY`)로만 관리하고, Next.js API Route를 통해서만 호출 (클라이언트에 키 노출 금지)
 - 무료 크레딧 범위 내 사용을 우선하고, 초과 시 기능을 비활성화하고 안내 문구를 보여줌
+
+## 6-2. 외부 연동 (Notion)
+- 데이터베이스: `지출 기록 (오늘도 기록해요)` (개인 Notion 워크스페이스)
+- 저장: `POST https://api.notion.com/v1/pages` (Next.js API Route에서만 호출, `NOTION_API_KEY`/`NOTION_DATABASE_ID` 서버 환경변수 사용)
+- Notion은 백업/열람용이라 실패해도 로컬 기록에는 영향 없음 (best-effort)
+- 참고: Supabase 도입은 이후 별도 단계(DAY2/3)에서 다시 계획
 
 ## 7. 향후 확장 아이디어 (Out of scope for MVP)
 - 월별 통계/그래프 (감정별 지출 비교 등)

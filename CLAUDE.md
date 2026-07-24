@@ -14,9 +14,12 @@
 ## 기술 스택
 - Next.js (App Router, JavaScript, `create-next-app` 기본 설정)
 - Tailwind CSS (CSS 파일 없이 유틸리티 클래스로 스타일링)
-- 데이터베이스: **Supabase** (무료 요금제 범위 내에서 사용)
-- 배포: **Vercel MCP**로 배포 (DAY2에 연결 예정)
-- 코드 백업: **GitHub**에 저장소 유지 (DAY3에 연결 예정), 실제 서비스 운영은 Vercel 배포 기준
+- 주 저장소: 브라우저 `localStorage` (서버 DB 없음)
+- 백업 저장소: **Notion 데이터베이스** (`지출 기록 (오늘도 기록해요)`) — 기록 즉시 best-effort로 동기화, 실패해도 앱 동작에 영향 없음
+- 향후 계획: **Supabase**를 정식 데이터베이스로 도입 예정 (별도 단계에서 진행, 무료 요금제 범위 내에서만)
+- 배포: **Vercel** — Vercel CLI로 로컬에서 연결/배포 완료 (`vercel link`, `vercel --prod`)
+- 코드 백업: **GitHub**(`choeunjeung/daily-expense-diary`)에 저장소 유지, 실제 서비스 운영은 Vercel 배포 기준
+- AI 연동: **Upstage**(영수증 OCR, 카테고리 분류, 주간 요약)
 
 ## 구조
 - `app/page.js` — 전체 기능이 들어있는 클라이언트 컴포넌트 (캐릭터 성장, 감정 태그 입력, 오늘 기록 리스트, 스티커 달력)

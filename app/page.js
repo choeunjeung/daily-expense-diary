@@ -113,6 +113,13 @@ export default function Home() {
       return next;
     });
 
+    // Notion 백업은 실패해도 기록 자체에는 영향 없도록 결과를 기다리지 않음
+    fetch("/api/notion-sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: todayKey, ...entry }),
+    }).catch(() => {});
+
     setAmount("");
     setMemo("");
     setEmotion(EMOTIONS[0]);
