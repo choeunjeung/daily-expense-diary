@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘도 기록해요 🐣</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>오늘도 기록해요 <span class="wiggle">🐣</span></h1>
+      <p class="subtitle">지출을 남길 때마다 나만의 친구가 자라나요</p>
+    </header>
+
+    <section class="character-card">
+      <div id="character" class="character">🥚</div>
+      <p id="characterMessage" class="character-message">알을 깨고 나올 준비를 하고 있어요...</p>
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <p id="progressText" class="progress-text">0 / 3 기록</p>
+    </section>
+
+    <section class="input-card">
+      <h2>오늘의 지출 남기기 ✏️</h2>
+      <form id="expenseForm">
+        <div class="field">
+          <label for="amount">금액</label>
+          <input type="number" id="amount" placeholder="예: 5000" min="0" required>
+        </div>
+        <div class="field">
+          <label>기분</label>
+          <div class="emotion-picker" id="emotionPicker">
+            <button type="button" class="emotion-btn" data-emotion="😊">😊</button>
+            <button type="button" class="emotion-btn" data-emotion="🤩">🤩</button>
+            <button type="button" class="emotion-btn" data-emotion="😅">😅</button>
+            <button type="button" class="emotion-btn" data-emotion="😢">😢</button>
+            <button type="button" class="emotion-btn" data-emotion="😡">😡</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="memo">메모 (선택)</label>
+          <input type="text" id="memo" placeholder="어디에 썼나요?">
+        </div>
+        <button type="submit" class="submit-btn">기록하기 💖</button>
+      </form>
+    </section>
+
+    <section class="today-card">
+      <h2>오늘 기록 📋</h2>
+      <ul id="todayList" class="today-list">
+        <li class="empty-msg">아직 기록이 없어요</li>
+      </ul>
+    </section>
+
+    <section class="calendar-card">
+      <div class="calendar-header">
+        <button id="prevMonth" class="nav-btn">◀</button>
+        <h2 id="calendarTitle"></h2>
+        <button id="nextMonth" class="nav-btn">▶</button>
+      </div>
+      <p id="calendarTotal" class="calendar-total"></p>
+      <div class="calendar-weekdays">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+      <p class="legend">⭐ 무지출 데이 &nbsp;&nbsp; 💸 지출 기록 있음</p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
